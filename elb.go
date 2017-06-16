@@ -315,7 +315,7 @@ func GetELBListFromAWS() (list []LoadBalancerDescriptionType) {
         resp, err := svc.DescribeLoadBalancers(params)
         if err != nil {
             if BeingThrottled(err) {   // Sleep for a moment if AWS is throttling us
-                fmt.Printf("  AWS throttling. Sleeping %s seconds...\n", APISecondsDelay)
+                fmt.Printf("  AWS throttling. Sleeping %d seconds...\n", APISecondsDelay)
                 time.Sleep(time.Duration(APISecondsDelay) * time.Second)
                 continue
             }
@@ -342,7 +342,7 @@ func GetELBListFromAWS() (list []LoadBalancerDescriptionType) {
                 elb = *elb.SetAccountAlias(AWSAccountAlias)
                 elb = *elb.SetAccountId(AWSAccountId)
                 list = append(list, elb)
-            }            
+            }
         }
 
         // Exit loop if no more records, else setup next batch request

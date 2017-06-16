@@ -71,9 +71,9 @@ func ListInstances(filter string, option string) {
 
 // Return newest instance list between local and remote store
 func GetInstanceList() (list []InstanceType, err error) {
-    localFileTimestamp := GetLocalFileTime(InstanceDataFile)    
+    localFileTimestamp := GetLocalFileTime(InstanceDataFile)
     remoteFileTimestamp := GetRemoteFileTime(InstanceDataFile)
-    
+
     // Use remote S3 file if it's newer
     if remoteFileTimestamp.After(localFileTimestamp) {
         tmplist, err := GetListFromRemote(InstanceDataFile)
@@ -112,7 +112,7 @@ func GetInstanceDetails(inst *InstanceType) (Name string,             // a
     State, IPAddr, AccountAlias = "Unknown", "-", "-"
     LaunchTime, Environment, BillingBrandCode = "-", "-", "-"
     AvailZone, SubnetId, ImageId, KeyName, iamProf = "-", "-", "-", "-", "-"
-    
+
     // Note how we defensibly ensure pointer values aren't 'nil'
 
     // Get tag attributes
@@ -121,8 +121,8 @@ func GetInstanceDetails(inst *InstanceType) (Name string,             // a
             if *Tag.Key == "Name" { Name = *Tag.Value }
             if *Tag.Key == "Environment" { Environment = *Tag.Value }
             if *Tag.Key == "BillingBrandCode" { BillingBrandCode = *Tag.Value }
-        }            
-    }    
+        }
+    }
     if inst.InstanceId != nil { InstanceId = *inst.InstanceId }
     if inst.InstanceType != nil { InstanceType = *inst.InstanceType }
     if inst.State.Name != nil { State = *inst.State.Name }
@@ -155,7 +155,7 @@ func UpdateLocalInstanceStoreFromAWS(minutesAgo int) {
     if minutesAgo == 0 {
         fmt.Printf("Updating local EC2 instance store.\n")
     } else {
-        updatedInstCount := len(GetCloudTrailEvents("ec2", minutesAgo))        
+        updatedInstCount := len(GetCloudTrailEvents("ec2", minutesAgo))
         if updatedInstCount < 1 {
             // Skip update if no EC2 events within ast minutesAgo
             fmt.Printf("Skipping local EC2 instance store update (no mods within %d minutes).\n",
@@ -195,14 +195,14 @@ func GetInstanceListFromAWS() (list []InstanceType) {
     params := &ec2.DescribeInstancesInput{
         MaxResults: aws.Int64(500),   // Max is 1000, but we'll get in 500 size sets
     }
-    
+
     // Loop requests in case there're more than PageSize records or we're being throttled
     for {
         // Get batch of records
         resp, err := svc.DescribeInstances(params)
         if err != nil {
             if BeingThrottled(err) {   // Sleep for a moment if AWS is throttling us
-                fmt.Printf("  AWS throttling. Sleeping %s seconds...\n", APISecondsDelay)
+                fmt.Printf("  AWS throttling. Sleeping %d seconds...\n", APISecondsDelay)
                 time.Sleep(time.Duration(APISecondsDelay) * time.Second)
                 continue
             }
@@ -242,7 +242,7 @@ func GetInstanceListFromAWS() (list []InstanceType) {
             break
         } else {
             params.NextToken = resp.NextToken
-        }        
+        }
     }
     return list
 }

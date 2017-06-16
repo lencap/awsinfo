@@ -44,7 +44,7 @@ func GetCloudTrailEvents(source string, minutesAgo int) (list []*cloudtrail.Even
 	    resp, err := svc.LookupEvents(params)
         if err != nil {
             if BeingThrottled(err) {   // Sleep for a moment if AWS is throttling us
-            	fmt.Printf("AWS throttling. Sleeping %s seconds...\n", APISecondsDelay)
+                fmt.Printf("AWS throttling. Sleeping %d seconds...\n", APISecondsDelay)
                 time.Sleep(time.Duration(APISecondsDelay) * time.Second)
                 continue
             }

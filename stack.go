@@ -43,12 +43,12 @@ func ListStacks(filter, option string) {
     stkList, err := GetStackList()
     if err != nil {
         Die(1, err.Error())
-    }    
+    }
     for _, stkRec := range stkList {
-    	stkName, acctAlias, stkStatus, stkId, lastUpdate := "-", "-", "-", "-", "-"
-    	if stkRec.StackStatus == nil {
-    		panic("Error. This stack record is missing field StackStatus.")
-    	} else {
+        stkName, acctAlias, stkStatus, stkId, lastUpdate := "-", "-", "-", "-", "-"
+        if stkRec.StackStatus == nil {
+            panic("Error. This stack record is missing field StackStatus.")
+        } else {
     		stkStatus = *stkRec.StackStatus
     		if strContains(stkStatus, "delete_complete") {
 	            continue   // Skip. We only care about active stacks 
@@ -154,14 +154,14 @@ func GetStackListFromAWS() (list []StackType) {
     svc := cloudformation.New(sess, aws.NewConfig().WithRegion(AWSRegion))
 
     params := &cloudformation.DescribeStacksInput{}
-    
+
     // Loop requests in case there're more than PageSize records or we're being throttled
     for {
         // Get batch of records
         resp, err := svc.DescribeStacks(params)
         if err != nil {
             if BeingThrottled(err) {   // Sleep for a moment if AWS is throttling us
-                fmt.Printf("  AWS throttling. Sleeping %s seconds...\n", APISecondsDelay)
+                fmt.Printf("  AWS throttling. Sleeping %d seconds...\n", APISecondsDelay)
                 time.Sleep(time.Duration(APISecondsDelay) * time.Second)
                 continue
             }

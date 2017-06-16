@@ -195,14 +195,14 @@ func GetZoneListFromAWS() (list []HostedZoneType) {
     params := &route53.ListHostedZonesInput{
         MaxItems: aws.String("100"),  // This is an AWS limit
     }
-    
+
     // Loop requests in case there're more than PageSize records or we're being throttled
     for {
         // Get batch of records
         resp, err := svc.ListHostedZones(params)
         if err != nil {
             if BeingThrottled(err) {   // Sleep for a moment if AWS is throttling us
-                fmt.Printf("  AWS throttling. Sleeping %s seconds...\n", APISecondsDelay)
+                fmt.Printf("  AWS throttling. Sleeping %d seconds...\n", APISecondsDelay)
                 time.Sleep(time.Duration(APISecondsDelay) * time.Second)
                 continue
             }
@@ -229,7 +229,7 @@ func GetZoneListFromAWS() (list []HostedZoneType) {
                 zone = *zone.SetAccountAlias(AWSAccountAlias)
                 zone = *zone.SetAccountId(AWSAccountId)
                 list = append(list, zone)
-            }            
+            }
         }
 
         // Exit loop if no more records, else setup next batch request
