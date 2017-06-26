@@ -5,11 +5,11 @@ import (
     "fmt"
     "time"
     "strings"
+    "encoding/json"
     "github.com/aws/aws-sdk-go/aws"
     "github.com/aws/aws-sdk-go/aws/session"
     "github.com/aws/aws-sdk-go/service/ec2"
     "github.com/aws/aws-sdk-go/aws/awsutil"
-    "encoding/json"
 )
 
 
@@ -158,11 +158,11 @@ func UpdateLocalInstanceStoreFromAWS(minutesAgo int) {
         updatedInstCount := len(GetCloudTrailEvents("ec2", minutesAgo))
         if updatedInstCount < 1 {
             // Skip update if no EC2 events within ast minutesAgo
-            fmt.Printf("Skipping local EC2 instance store update (no mods within %d minutes).\n",
+            fmt.Printf("Skipping local EC2 instance store update (no mods within %d minutes)\n",
                 minutesAgo)
             return
         }
-        fmt.Printf("Updating local EC2 instance store (%d modified within %d minutes).\n",
+        fmt.Printf("Updating local EC2 instance store (%d modified within %d minutes)\n",
             updatedInstCount, minutesAgo)
     }
 

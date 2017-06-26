@@ -8,11 +8,11 @@ import (
     "strings"
     "strconv"
     "errors"
+    "encoding/json"
     "github.com/aws/aws-sdk-go/aws"
     "github.com/aws/aws-sdk-go/aws/session"
     "github.com/aws/aws-sdk-go/service/route53"
     "github.com/aws/aws-sdk-go/aws/awsutil"
-    "encoding/json"
 )
 
 // Extend AWS route53.ResourceRecordSet type to include these additional fields
@@ -203,14 +203,16 @@ func GetDNSFromLocal(dnsName string) (dns ResourceRecordSetType, err error) {
 func UpdateLocalDNSStoreFromAWS(targetZones []string, minutesAgo int) {
     // Note that DNS updates _have_ to be done by going thru each DNS zone
 
-    // Start with the most recent zone store set
-    currentZoneList, _ := GetZoneList()
-    var targetZoneList []HostedZoneType
+    // Based new target zone list on current zone list and whether we're updating
+    // 1) all of them
+    // 2) only those changed minutes ago or
+    // 3) those specified in targetZone string
+    var targetZoneList []HostedZoneType  // New list we're building
+    currentZoneList, _ := GetZoneList()  // Grab current zone list
 
-    // Determine whether we're doing all zones, recently changed ones, or only those specified by user 
     if len(targetZones) == 0 && minutesAgo == 0 {
         // We'll update DNS records in ALL the zones
-        fmt.Printf("Updating local DNS store for all domains (can take a long time).\n")
+        fmt.Printf("Updating local DNS store for all domains (can take a long time)\n")
         targetZoneList = currentZoneList
     } else if len(targetZones) == 0 && minutesAgo > 0 {
         // We'll update DNS records ONLY in zones modified within minutesAgo
@@ -221,12 +223,12 @@ func UpdateLocalDNSStoreFromAWS(targetZones []string, minutesAgo int) {
                 minutesAgo)
             return
         }
-        fmt.Printf("Updating local DNS store (%d modified within %d minutes).\n",
+        fmt.Printf("Updating local DNS store (%d modified within %d minutes)\n",
             updatedZoneIdListCount, minutesAgo)
         // Build our specific target list
         for _, zone := range currentZoneList {
             // Add zone record only if it's one of the ones recently changed
-            if strListContains(updatedZoneIdList, *zone.Id) {
+            if strInList(*zone.Id, updatedZoneIdList) {
                 targetZoneList = append(targetZoneList, zone)
             }
         }
@@ -238,38 +240,46 @@ func UpdateLocalDNSStoreFromAWS(targetZones []string, minutesAgo int) {
         for _, zone := range currentZoneList {
             // Add zone record only if it's one of the ones specified by user
             zoneName := strings.TrimSuffix(*zone.Name, ".")  // Remove useless dotted suffix
-            if strListContains(targetZones, zoneName) {
+            if strInList(zoneName, targetZones) {
                 targetZoneList = append(targetZoneList, zone)
             }
         }
     }
 
-    // Create a new list from existing store, without the ones in the target zones
-    var list []ResourceRecordSetType 
-    dnsList, _ := GetDNSList()
-    for _, dns := range dnsList  {
-        // Add this record to our new list ONLY if it's NOT in one of our target zones
-        zone, err := GetZoneByIdFromList(currentZoneList, *dns.ZoneId)
-        if err != nil {
-            if !zoneListContains(targetZoneList, zone) {
-                list = append(list, dns)
-            }
-        }
+    // Build a list of the target zone Ids to simplify logic below
+    var targetZoneListIds []string
+    for _, zone := range targetZoneList {
+        targetZoneListIds = append(targetZoneListIds, *zone.Id)
     }
 
-    // Now get all records for this account, and add them to this new list
-    // Cycle thru each target zone and update their DNS records
+    // Build a brand new list from existing DNS store
+    var list []ResourceRecordSetType 
+    dnsList, _ := GetDNSList()
+    for _, dns := range dnsList {
+        // If this record belongs to one of the target zones, AND it's in the current
+        // AWS account then let's skip it so we can update its value in the next for-loop
+        if strInList(*dns.ZoneId, targetZoneListIds) && *dns.AccountId == AWSAccountId {
+            continue
+        }
+        // Add this record, leaving as is, since we won't be updating it
+        list = append(list, dns)
+    }
+
+    // Now cycle thru each target zone, updating their DNS records in our growing list
     for _, zone := range targetZoneList {
-        // We only care to update those records for current AWS account
+        // We can only update records for zones in the current AWS account, so skip
+        // any zone not in the current account
         if *zone.AccountId != AWSAccountId {
             continue
         }
 
-        // Now get all records for this account/zone, and add them to this new list
+        // Now get all records for this zone, and add them to this new list
         dnsList := GetDNSListByZoneIdFromAWS(*zone.Id)
+
         // Print some info in the process
         zoneName := strings.TrimSuffix(*zone.Name, ".")
         fmt.Printf("  Updating zone: %s [%d]\n", zoneName, len(dnsList))
+
         for _, dns := range dnsList {
             list = append(list, dns)
         }

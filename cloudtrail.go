@@ -19,7 +19,7 @@ func GetCloudTrailEvents(source string, minutesAgo int) (list []*cloudtrail.Even
 
     startTime := time.Now().UTC()
     if minutesAgo == 0 {
-        startTime = startTime.AddDate(0,0,-7)   // Default to 14 days (20160 mins) ago
+        startTime = startTime.AddDate(0,0,-7)   // Default to 7 days (10080 mins) ago
     } else {
         startTime = startTime.Add(-time.Duration(minutesAgo) * time.Minute)
     }
@@ -36,7 +36,8 @@ func GetCloudTrailEvents(source string, minutesAgo int) (list []*cloudtrail.Even
         EndTime: aws.Time(time.Now().UTC()),  // AWS API uses UTC
     }
 
-    fmt.Printf("Checking CloudTrail for updates in source: %s\n", source)
+    // Uncomment to help debugging
+    //fmt.Printf("Checking CloudTrail for updates in source: %s\n", source)
 
     // Loop requests, in case there are more than maxResults records or AWS is throttling
     for {

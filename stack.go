@@ -5,11 +5,11 @@ import (
     "fmt"
     "time"
     "strings"
+    "encoding/json"
     "github.com/aws/aws-sdk-go/aws"
     "github.com/aws/aws-sdk-go/aws/session"
     "github.com/aws/aws-sdk-go/service/cloudformation"
     "github.com/aws/aws-sdk-go/aws/awsutil"
-    "encoding/json"
 )
 
 
@@ -114,7 +114,7 @@ func GetStackList() (list []StackType, err error) {
 func UpdateLocalStackStoreFromAWS(minutesAgo int) {
     // Do full update if minutesAgo is zero (meaning it wasn't specified)
     if minutesAgo == 0 {
-        fmt.Printf("Updating local CloudFormation stack store.\n")
+        fmt.Printf("Updating local CloudFormation stack store\n")
     } else {
         updatedStackCount := len(GetCloudTrailEvents("cloudformation", minutesAgo)) 
         if updatedStackCount < 1 {
@@ -123,7 +123,7 @@ func UpdateLocalStackStoreFromAWS(minutesAgo int) {
                 minutesAgo)
             return
         }
-        fmt.Printf("Updating local CloudFormation stack store (%d modified within %d minutes).\n",
+        fmt.Printf("Updating local CloudFormation stack store (%d modified within %d minutes)\n",
             updatedStackCount, minutesAgo)
     }
 

@@ -11,13 +11,13 @@ import (
     "errors"
     "encoding/json"
     "io/ioutil"
+    "net/http"
     "github.com/vaughan0/go-ini"
     "github.com/aws/aws-sdk-go/aws"
     "github.com/aws/aws-sdk-go/aws/session"
     "github.com/aws/aws-sdk-go/service/iam"
     "github.com/aws/aws-sdk-go/service/ec2"
     "github.com/aws/aws-sdk-go/service/s3/s3manager"
-    "net/http"
 )
 
 
@@ -246,7 +246,7 @@ func BeingThrottled(err error) bool {
 
 
 // Check if string element is in string list 
-func strListContains(list []string, element string) bool {
+func strInList(element string, list []string) bool {
     for _, str := range list {
         if strings.EqualFold(str, element) {
             return true

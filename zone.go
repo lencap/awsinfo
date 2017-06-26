@@ -5,12 +5,11 @@ import (
     "fmt"
     "time"
     "strings"
-    "errors"
+    "encoding/json"
     "github.com/aws/aws-sdk-go/aws"
     "github.com/aws/aws-sdk-go/aws/session"
     "github.com/aws/aws-sdk-go/service/route53"
     "github.com/aws/aws-sdk-go/aws/awsutil"
-    "encoding/json"
 )
 
 // Extend AWS route53.HostedZone type to include these additional fields
@@ -127,25 +126,15 @@ func AppendIfMissing(list []string, target string) []string {
 }
 
 
-// Check if zone exists in zone list 
-func zoneListContains(list []HostedZoneType, z HostedZoneType) bool {
+// Check if there's a zone with zoneId in given zone list
+func IdInZoneList(zoneId string, list []HostedZoneType) bool {
+//func zoneListContainsId(list *[]HostedZoneType, zoneId string) bool {
     for _, zone := range list {
-        if *zone.Id == *z.Id && *zone.AccountId == *z.AccountId {
+        if strings.EqualFold(*zone.Id, zoneId) {
             return true
         }
     }
     return false
-}
-
-
-// Return specific zone record if found in given list
-func GetZoneByIdFromList(list []HostedZoneType, zoneId string) (zone HostedZoneType, err error) {
-    for _, zone := range list {
-        if zone.Id != nil && strings.EqualFold(*zone.Id, zoneId) {        
-            return zone, nil
-        }
-    }
-    return zone, errors.New("Record not found.")  // Return empty record
 }
 
 
@@ -162,7 +151,7 @@ func UpdateLocalZoneStoreFromAWS(minutesAgo int) {
                 minutesAgo)
             return
         }
-        fmt.Printf("Updating local DNS zone store (%d modified within %d minutes).\n",
+        fmt.Printf("Updating local DNS zone store (%d modified within %d minutes)\n",
             updatedZonesCount, minutesAgo)
     }
 

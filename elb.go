@@ -7,11 +7,11 @@ import (
     "strings"
     "strconv"
     "errors"
+    "encoding/json"
     "github.com/aws/aws-sdk-go/aws"
     "github.com/aws/aws-sdk-go/aws/session"
     "github.com/aws/aws-sdk-go/service/elb"
     "github.com/aws/aws-sdk-go/aws/awsutil"
-    "encoding/json"
 )
 
 // Extend AWS elb.LoadBalancerDescription type to include these additional fields
@@ -276,7 +276,7 @@ func UpdateLocalELBStoreFromAWS(minutesAgo int) {
                 minutesAgo)
             return
         }
-        fmt.Printf("Updating local ELB store (%d modified within %d minutes).\n",
+        fmt.Printf("Updating local ELB store (%d modified within %d minutes)\n",
             updatedELBCount, minutesAgo)
     }
 
