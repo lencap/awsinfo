@@ -271,9 +271,6 @@ func GetLocalFileTime(dataFile string) (t time.Time) {
 func GetRemoteFileTime(dataFile string) (t time.Time) {
     S3FileUrl := S3URLBase + "/" + dataFile
     resp, err := http.Head(S3FileUrl)
-    if err != nil {
-        fmt.Printf("Can't http.Head %s\n%s\n", S3FileUrl, err.Error())
-    }
     if resp.StatusCode == 200 {
         lastModifiedDate := resp.Header.Get("Last-Modified")
         lmt, err := time.Parse(time.RFC1123, lastModifiedDate)

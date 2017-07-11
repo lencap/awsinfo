@@ -11,7 +11,7 @@ import (
 // Global constants
 const (
     ProgName         = "awsinfo"
-    ProgVer          = "2.0.3"
+    ProgVer          = "2.0.4"
     DNSDataFile      = "dns.json"
     ZoneDataFile     = "zone.json"
     ELBDatafile      = "elb.json"
