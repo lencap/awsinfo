@@ -83,8 +83,8 @@ func main() {
         CreateSkeltonConfigFile()
     } else if option == "-z" {
         ListZones(filter)
-    } else if option == "-d" {
-        ListDNS(filter)
+    } else if option == "-d" || option == "-dv"  {
+        ListDNS(filter, option)
     } else if option == "-e" {
         ListELBRecords(filter)
     } else if option == "-es" {

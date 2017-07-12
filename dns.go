@@ -48,7 +48,7 @@ func (s *ResourceRecordSetType) SetZoneId(v string) *ResourceRecordSetType {
 
 
 // Display all DNS records with applied filter
-func ListDNS(filter string) {
+func ListDNS(filter string, option string) {
     list, err := GetDNSList()
     if err != nil {
         Die(1, err.Error())
@@ -67,8 +67,17 @@ func ListDNS(filter string) {
             if filter == "" || strContains(dnsName, filter) || strContains(Values, filter) ||
                                strContains(dnsType, filter) || strContains(dnsTTL, filter) ||
                                strContains(dnsZoneId, filter) {
-                // Notice we don't actually display d.ZoneID but do filter by it
-                fmt.Printf("%-64s  %-8s  %6s  %-2d  %s\n", dnsName, dnsType, dnsTTL, dnsCount, Values)
+                // Notice we never actually display d.ZoneID but we do filter by it
+                if option == "-dv" {
+                    fmt.Printf("%-64s  %-8s  %6s  %s\n", dnsName, dnsType, dnsTTL, dnsValues[0])
+                    if dnsCount > 1 {
+                        for i := 1 ; i < dnsCount ; i++ {
+                            fmt.Printf("%-64s  %-8s  %6s  %s\n", " ", " ", " ", dnsValues[i])
+                        }
+                    }
+                } else {
+                    fmt.Printf("%-64s  %-8s  %6s  %-2d  %s\n", dnsName, dnsType, dnsTTL, dnsCount, Values)
+                }                
             }
         }
     }
