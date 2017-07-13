@@ -55,30 +55,36 @@ func ListDNS(filter string, option string) {
     }
     for _, dnsRec := range list {
         dnsName, dnsType, dnsTTL, dnsZoneId, dnsCount, dnsValues := GetDetailsOfDNS(dnsRec)
-        // We only care to list CNAME, ALIAS, and A records
-        if strings.EqualFold(dnsType, "cname") ||
-           strings.EqualFold(dnsType, "alias") ||
-           strings.EqualFold(dnsType, "a") { 
-            Values := ""
+        Values := ""
+        if dnsCount > 0 {
             for i := 0 ; i < dnsCount ; i++ {
                 Values = Values + dnsValues[i] + " "
             }
-            Values = strings.TrimSpace(Values)
-            if filter == "" || strContains(dnsName, filter) || strContains(Values, filter) ||
-                               strContains(dnsType, filter) || strContains(dnsTTL, filter) ||
-                               strContains(dnsZoneId, filter) {
-                // Notice we never actually display d.ZoneID but we do filter by it
-                if option == "-dv" {
-                    fmt.Printf("%-64s  %-8s  %6s  %s\n", dnsName, dnsType, dnsTTL, dnsValues[0])
-                    if dnsCount > 1 {
-                        for i := 1 ; i < dnsCount ; i++ {
-                            fmt.Printf("%-64s  %-8s  %6s  %s\n", " ", " ", " ", dnsValues[i])
-                        }
+        }
+        Values = strings.TrimSpace(Values)
+        if filter == "" || strContains(dnsName, filter) || strContains(Values, filter) ||
+                           strContains(dnsType, filter) || strContains(dnsTTL, filter) ||
+                           strContains(dnsZoneId, filter) {
+            // Notice we never actually display d.ZoneID but we do filter by it
+            if option == "-dv" {
+                dnsValue0 := "-"
+                if len(dnsValues) > 0 {
+                    dnsValue0 = dnsValues[0]
+                }
+                fmt.Printf("%-64s  %-8s  %6s  %s\n", dnsName, dnsType, dnsTTL, dnsValue0)
+                if dnsCount > 1 {
+                    for i := 1 ; i < dnsCount ; i++ {
+                        fmt.Printf("%-64s  %-8s  %6s  %s\n", " ", " ", " ", dnsValues[i])
                     }
-                } else {
+                }
+            } else {
+                // For regular display we only list CNAME, ALIAS, and A records
+                if strings.EqualFold(dnsType, "cname") ||
+                   strings.EqualFold(dnsType, "alias") ||
+                   strings.EqualFold(dnsType, "a") { 
                     fmt.Printf("%-64s  %-8s  %6s  %-2d  %s\n", dnsName, dnsType, dnsTTL, dnsCount, Values)
-                }                
-            }
+                }
+            }                
         }
     }
     return
@@ -112,35 +118,38 @@ func GetDNSList() (list []ResourceRecordSetType, err error) {
 // Return important attributes of given object
 func GetDetailsOfDNS(dnsRec ResourceRecordSetType) (dnsName, dnsType, dnsTTL, dnsZoneId string,
                                                     dnsCount int, dnsValues []string) {
-    dnsName, dnsType, dnsTTL, dnsValues, dnsCount = "-", "-", "-", nil, 0
+    dnsName, dnsType, dnsTTL, dnsValues, dnsCount = "-", "-", "-", nil, 1
 
     dnsName = strings.TrimSuffix(*dnsRec.Name, ".")  // Trim superfluous pre/suffixes in Name
     dnsZoneId = *dnsRec.ZoneId
+    dnsType = *dnsRec.Type
 
-    // Check only for CNAME and A records. Skip all others types
-    if *dnsRec.Type == route53.RRTypeCname {        // If Type is CNAME
-        dnsType = "CNAME"                           // CNAMEs only have 1 value, index 0
-        dnsCount = 1
+    if dnsType == "CNAME" {
+        // CNAMEs only have 1 value, index 0
         dnsValues = append(dnsValues, *dnsRec.ResourceRecords[0].Value)
-        dnsValues[0] = strings.TrimSuffix(dnsValues[0], ".")   // Trim superfluous pre/suffixes in CNAME
-    } else if *dnsRec.Type == route53.RRTypeA {     // Decipher between regular A and ALIAS record
-        if dnsRec.ResourceRecords == nil {          // If nil then it's an ALIAS record 
-            dnsType = "ALIAS"
-            dnsCount = 1
-            dnsValues = append(dnsValues, *dnsRec.AliasTarget.DNSName)
-            dnsValues[0] = NormalDNSName(dnsValues[0])
-        } else {
-            dnsType = "A"                           // It's a regular A record
-            dnsCount = len(dnsRec.ResourceRecords)  // Get the number of values (IPs)
-            for i := 0 ; i < dnsCount ; i++ {
-                dnsValues = append(dnsValues, *dnsRec.ResourceRecords[i].Value)
-            }
-        }        
+        dnsValues[0] = strings.TrimSuffix(dnsValues[0], ".")  // Trim superfluous pre/suffixes in CNAME
+    } else if dnsType == "A" && dnsRec.ResourceRecords == nil {
+        // If it's an A rec with no ResourceRecords, then it's that special AWS ALIAS type.
+        // Also only one value, index 0
+        dnsType = "ALIAS"
+        dnsValues = append(dnsValues, *dnsRec.AliasTarget.DNSName)
+        dnsValues[0] = NormalDNSName(dnsValues[0])
+    } else if dnsType == "A" || dnsType == "MX" || dnsType == "NS" ||
+              dnsType == "SRV" || dnsType == "SOA" || dnsType == "TXT" || dnsType == "AAAA" {
+        // All other types can have a number of values
+        dnsCount = len(dnsRec.ResourceRecords)  // Get the number of entries for this rec
+        for i := 0 ; i < dnsCount ; i++ {
+            dnsValues = append(dnsValues, *dnsRec.ResourceRecords[i].Value)
+        }
     } else {
-        return
+        dnsCount = len(dnsRec.ResourceRecords)
+        dnsValues[0] = "Unknown-record-type"
     }
 
-    if dnsRec.TTL != nil { dnsTTL = strconv.FormatInt(*dnsRec.TTL, 10) } // Convert TTL to string
+    // Convert TTL to string
+    if dnsRec.TTL != nil {
+        dnsTTL = strconv.FormatInt(*dnsRec.TTL, 10)
+    }
     return
 }
 
