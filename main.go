@@ -118,6 +118,7 @@ func PrintUsage(option string) {
         fmt.Printf("        -3f              Ignore file time stamps and force above copying\n")
         fmt.Printf("        -eh [STRING]     List ELB health-checks, filter with optional STRING\n")
         fmt.Printf("        -es [STRING]     List ELB SSL certs, filter with optional STRING\n")
+        fmt.Printf("        -dv [STRING]     List DNS records, more verbosely\n")
         fmt.Printf("        -iv [STRING]     List EC2 instances, more verbosely\n")
         fmt.Printf("        -sv [STRING]     List CloudFormation stacks, more verbosely\n")
         fmt.Printf("        -u  [MIN|ZONES]  Update local stores, and only DNS records changed in last MIN minutes,\n")

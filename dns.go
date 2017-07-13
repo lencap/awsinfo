@@ -55,6 +55,7 @@ func ListDNS(filter string, option string) {
     }
     for _, dnsRec := range list {
         dnsName, dnsType, dnsTTL, dnsZoneId, dnsCount, dnsValues := GetDetailsOfDNS(dnsRec)
+        dnsName = strings.Replace(dnsName, "\052", `*`, -1)  // Convert asterisks
         Values := ""
         if dnsCount > 0 {
             for i := 0 ; i < dnsCount ; i++ {
