@@ -55,11 +55,18 @@ func ListDNS(filter string, option string) {
     }
     for _, dnsRec := range list {
         dnsName, dnsType, dnsTTL, dnsZoneId, dnsCount, dnsValues := GetDetailsOfDNS(dnsRec)
-        dnsName = strings.Replace(dnsName, "\052", `*`, -1)  // Convert asterisks
+        dnsName = strings.Replace(dnsName, `\052`, "*", -1)  // Convert literal escaped asterisks
+        dnsName = strings.Replace(dnsName, `\100`, "@", -1)  //   and at-sign
         Values := ""
         if dnsCount > 0 {
             for i := 0 ; i < dnsCount ; i++ {
-                Values = Values + dnsValues[i] + " "
+                // Quote value if it has spaces and is not already quoted
+                val := dnsValues[i]
+                if strings.Contains(val, " ") && val[0] != '"' {
+                    val = strconv.Quote(val)
+                }
+                // Add it to growing space-separated string
+                Values = Values + val + " "
             }
         }
         Values = strings.TrimSpace(Values)
@@ -68,18 +75,10 @@ func ListDNS(filter string, option string) {
                            strContains(dnsZoneId, filter) {
             // Notice we never actually display d.ZoneID but we do filter by it
             if option == "-dv" {
-                dnsValue0 := "-"
-                if len(dnsValues) > 0 {
-                    dnsValue0 = dnsValues[0]
-                }
-                fmt.Printf("%-64s  %-8s  %6s  %s\n", dnsName, dnsType, dnsTTL, dnsValue0)
-                if dnsCount > 1 {
-                    for i := 1 ; i < dnsCount ; i++ {
-                        fmt.Printf("%-64s  %-8s  %6s  %s\n", " ", " ", " ", dnsValues[i])
-                    }
-                }
+                // Display all records
+                fmt.Printf("%-64s  %-8s  %6s  %-2d  %s\n", dnsName, dnsType, dnsTTL, dnsCount, Values)
             } else {
-                // For regular display we only list CNAME, ALIAS, and A records
+                // Display only list CNAME, ALIAS, and A records
                 if strings.EqualFold(dnsType, "cname") ||
                    strings.EqualFold(dnsType, "alias") ||
                    strings.EqualFold(dnsType, "a") { 
