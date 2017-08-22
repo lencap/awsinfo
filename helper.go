@@ -270,15 +270,16 @@ func GetLocalFileTime(dataFile string) (t time.Time) {
 // Return remote file time in UTC
 func GetRemoteFileTime(dataFile string) (t time.Time) {
     S3FileUrl := S3URLBase + "/" + dataFile
-    resp, _ := http.Head(S3FileUrl)
-    if resp.StatusCode == 200 {
+    resp, err := http.Head(S3FileUrl)
+    if err == nil && resp.StatusCode == 200 {
         lastModifiedDate := resp.Header.Get("Last-Modified")
         lmt, err := time.Parse(time.RFC1123, lastModifiedDate)
         if err == nil {
             return lmt.UTC()
         }
     }
-    return t  // Return zero time
+    // If anything, just return zero time
+    return t
 }
 
 
