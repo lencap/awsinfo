@@ -183,13 +183,7 @@ func DeleteLocalStoresFiles(option string) {
     fileList := []string{DNSDataFile, ZoneDataFile, ELBDatafile,InstanceDataFile,StackDataFile}
     for _, file := range fileList {
         localFile := filepath.Join(progConfDir, file)
-        err := os.Remove(localFile)
-        if err != nil {
-            Die(1, err.Error())
-        }
-        if option == "verbose" {
-            fmt.Printf("Deleted %s\n", localFile)
-        }
+        os.Remove(localFile)
     }
 }
 
