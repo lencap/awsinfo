@@ -90,22 +90,41 @@ func GetZoneList() (list []HostedZoneType, err error) {
 }
 
 
-// Return list of zone IDs of zones that have changed within minutesAgo or in the last 7 days
+// Return list of zoneIDs for zones that have changed within minutesAgo or in the last 7 days
 func GetUpdatedZoneIdList(minutesAgo int) (list []string) {
+    // Get all route53 Cloudtrail events within minutesAgo
     for _, eventString := range GetCloudTrailEvents("route53", minutesAgo) {
+        // The embedded CloudTrailEvent field is a doubly encoded json string whose structure we
+        // don't know. Let's convert it to a mapped string, so we can parse it below. This would
+        // be easier if the API had a CloudTrailEvent struct type.
         var obj map[string]interface{}
         err := json.Unmarshal([]byte(*eventString.CloudTrailEvent), &obj)
         if err != nil {
             panic(err.Error())
         }
-        // Decode CloudTrailEvent arbitrary JSON string to object
-        //   A bit messy because API lacks CloudTrailEvent struct type
+
+        // Parse the mapped string event object, looking for where the zoneId is
         for k, v := range obj {
-            if strings.EqualFold(k, "requestParameters") {
+            var zoneId string
+            // See if the updated zoneId is under requestParameters
+            if strings.EqualFold(k, "requestParameters") && v != nil {
                 for k2, v2 := range v.(map[string]interface{}) {
                     if strings.EqualFold(k2, "hostedZoneId") {
-                        value := "/hostedzone/" + v2.(string)
-                        list = AppendIfMissing(list, value)
+                        zoneId = "/hostedzone/" + v2.(string)
+                        list = AppendIfMissing(list, zoneId)
+                    }
+                }
+            }
+            // Else, see if it's under responseElements
+            if zoneId == "" && strings.EqualFold(k, "responseElements") && v != nil {
+                for k2, v2 := range v.(map[string]interface{}) {
+                    if strings.EqualFold(k2, "hostedZone") && v2 != nil {
+                        for k3, v3 := range v2.(map[string]interface{}) {
+                            if strings.EqualFold(k3, "id") {
+                                zoneId = v3.(string)
+                                list = AppendIfMissing(list, zoneId)
+                            }
+                        }
                     }
                 }
             }

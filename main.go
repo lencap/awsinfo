@@ -11,7 +11,7 @@ import (
 // Global constants
 const (
     ProgName         = "awsinfo"
-    ProgVer          = "2.0.7"
+    ProgVer          = "2.0.8"
     DNSDataFile      = "dns.json"
     ZoneDataFile     = "zone.json"
     ELBDatafile      = "elb.json"
@@ -59,8 +59,7 @@ func main() {
         if filter != "" {
             if minInt, err := strconv.Atoi(filter); err == nil {
                 if minInt < 1 || minInt > 10080 {
-                    fmt.Printf("Error. MIN minutes (%d) must be between 1 and 10080 (7 days)\n", minInt)
-                    os.Exit(1)
+                    Die(1, "Error. MIN minutes (" + filter + ") must be between 1 and 10080 (7 days).")
                 }
                 minutesAgo = minInt
             } else {
