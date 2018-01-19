@@ -13,7 +13,7 @@ Alternatively, you can compile and install manually:
   * Run `make all` if compiling for the first time, or just `make` if it's a subsequent compile. 
   * Install the resulting `awsinfo` binary somewhere in your PATH.
 
-Create and update the `$HOME/.awsinfo/config` file
+After the installation you need to create and update the `$HOME/.awsinfo/config` file:
   * `awsinfo -y`
   * `vi $HOME/.awsinfo/config` and replace the default **awsinfo** with the actual S3 bucket name for your organization.
 
