@@ -1,36 +1,36 @@
 # AWS CLI Information Utility
-This is a system admin utility that allows quick and dirty querying of the following AWS resources: EC2 instances, ELBs, R53 DNS zones and records, and CloudFormation stacks. It also allows the breakdown of a DNS/ELB endpoint into its instances backends. See Usage below for more info.
+A sysadmin command-line utility that allows quick and dirty querying of the following AWS resources: EC2 instances, ELBs, R53 DNS zones and records, and CloudFormation stacks. It also allows the breakdown of a DNS/ELB endpoint into its instances backends. See below for more info.
 
-The speed in querying these services is achieve by storing/caching the info in JSON files that are securely accessible either locally (under the $HOME/.awsinfo/ directory), or remotely in an S3 bucket, or a combination of both. It uses the following 5 files: `inst.json`, `elb.json`, `zone.json`, `dns.json`, and `stack.json`.
+The speed in querying these services is achieve by caching the info in JSON files that are securely accessible from `$HOME/.awsinfo/ directory`. These files are copied locally from an S3 bucket that should only be accessible from networks in your organization. It uses the following 5 files: `inst.json`, `elb.json`, `zone.json`, `dns.json`, and `stack.json`.
 
-Originally written in Python, but decided to rewrite it in Go to play with the AWS SDK http://docs.aws.amazon.com/sdk-for-go/api/ and just to get more familiar with this language.
+## Installation
+The prefer installation method is with [Homebrew](https://brew.sh):
+  * `brew tap --full lencap/tools git@github.com:lencap/homebrew-tools`
+  * `brew install lencap/tools/awsinfo`
+
+Alternatively, you can compile and install manually:  
+  * Install GoLang (please find out how that's done somewhere else).
+  * Run `make all` if compiling for the first time, or just `make` if it's a subsequent compile. 
+  * Install the resulting `awsinfo` binary somewhere in your PATH.
+
+Create and update the `$HOME/.awsinfo/config` file
+  * `awsinfo -y`
+  * `vi $HOME/.awsinfo/config` and replace the default **awsinfo** with the actual S3 bucket name for your organization.
 
 ## Local Store
-To use it with Local Store only, you will need to run `awsinfo -u` for every AWS account for which you want to gather and query resources for. The only drawback with this is that the data will eventually get old, and  you will need to rerun `-u` updates again and again. Although you could automate this update locally, it is best to do this in a centralize place which is essentially what Remote Store offers (see below).
+To use it with Local Store only, you will need to CLI logon to each respective AWS account and run `awsinfo -u`. This will gather the records of all those resources and store them locally in the files mentioned above. The drawback with this method is that the data will eventually get old, and you will need to rerun `-u` updates again and again. Although you could automate this update locally, it is best to do this in a centralize place which is essentially what Remote Store offers (see below).
 
 ## Remote Store
-To use it with Remote Store you will need to setup a scheduled job to periodically run the `-u` update (as well as `-3` to actually copy the files) to a secure S3 bucket that you can specify in the `$HOME/.awsinfo/config` file. With this method you will also need to run it against all the AWS accounts for which you want to query resources for. The advantage of Remote Store is that the data can be more easily updated and managed, and the process can be more easily automated and shared by other system admins in your organization.
+To use it with Remote Store you will need to setup a scheduled job to periodically run the `-u` update (as well as `-3` to actually copy the files) to a secure S3 bucket that you can specify in the `$HOME/.awsinfo/config` file. With this method you will also need to run it against all the AWS accounts for which you want to query resources for. The advantage of Remote Store is that the data can be more easily updated and managed, and the process can be more easily automated and shared by other sysadmins in your organization.
 
 Note that with this method the utility will inherently run in *hybrid* mode and it will keep and use local copies of the Remote Stores. It will download the latest remote files **only** when it detects they are newer.
 
-To setup the Remote Store run `awsinfo -y` to create the `$HOME/.awsinfo/confing` file, then review and update the parameters according to your environment. The variables should be self-explanatory.
-
 NOTE: For security reasons, when you setup the remote S3 bucket make sure you limit HTTP access to **only** internal networks to your organization. Also, the bucket should only be writable by a dedicated account with very limited privileges.
-
-## Getting Started
-Use existing compiled binary:
-  1. Check with Systems Admin Team to see if there's already an existing URL pointing to the latest `awsinfo` binary.
-  2. Download it and install it somewhere in your PATH.
-  
-Compile your own. Note that this has only been tested on macOS and Linux.
-  1. Download the latest version of Go from https://golang.org/dl/ and install as per https://golang.org/doc/install
-  2. Run `make all`
-  3. Put resulting `awsinfo` binary file somewhere in your system path. For those whose binaries reside in `$HOME/data/bin`, you can run `make install`.
 
 ## Usage
 Once in your PATH, you can use the utility as per usage below.
 <pre><code>
-AWS CLI Information Utility 2.0.2
+AWS CLI Information Utility 2.0.8
 awsinfo DNSRECORD        Print IPs/ELB/instances breakdown for given DNSRECORD
         -e  [STRING]     List ELBs, filter with optional STRING
         -d  [STRING]     List DNS records, filter with optional STRING
@@ -42,6 +42,7 @@ awsinfo DNSRECORD        Print IPs/ELB/instances breakdown for given DNSRECORD
         -3f              Ignore file time stamps and force above copying
         -eh [STRING]     List ELB health-checks, filter with optional STRING
         -es [STRING]     List ELB SSL certs, filter with optional STRING
+        -dv [STRING]     List DNS records, more verbosely
         -iv [STRING]     List EC2 instances, more verbosely
         -sv [STRING]     List CloudFormation stacks, more verbosely
         -u  [MIN|ZONES]  Update local stores, and only DNS records changed in last MIN minutes,
