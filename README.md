@@ -31,7 +31,7 @@ NOTE: For security reasons, when you setup the remote S3 bucket make sure you li
 Once in your PATH, you can use the utility as per usage below.
 <pre><code>
 $ awsinfo -h
-AWS CLI Information Utility 2.0.8
+AWS CLI Information Utility 2.0.9
 awsinfo DNSRECORD        Print IPs/ELB/instances breakdown for given DNSRECORD
         -e  [STRING]     List ELBs, filter with optional STRING
         -d  [STRING]     List DNS records, filter with optional STRING
