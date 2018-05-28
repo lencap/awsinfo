@@ -53,13 +53,17 @@ func ListZones(filter string) {
            *zone.Config.PrivateZone == true {
             zoneType = "private"
         }
+        
+        accAlias := "-"
+        if zone.AccountAlias != nil { accAlias = *zone.AccountAlias }
 
         // Print all qualifying entries
         if filter == "" || strContains(zoneName, filter) ||
                            strContains(zoneType, filter) ||
+                           strContains(accAlias, filter) ||
                            strContains(*zone.Id, filter) {
-            fmt.Printf("%-44s  %-8s  %6d  %-30s\n", zoneName, zoneType,
-                *zone.ResourceRecordSetCount, *zone.Id)
+            fmt.Printf("%-44s  %-8s  %6d  %-30s  %-18s\n", zoneName, zoneType,
+                *zone.ResourceRecordSetCount, *zone.Id, accAlias)
         }
     }
     return
