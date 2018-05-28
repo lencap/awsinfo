@@ -54,14 +54,10 @@ func ListDNS(filter string, option string) {
         Die(1, err.Error())
     }
     for _, dnsRec := range list {
-        //fmt.Printf("FIRST:[%s] \n", dnsRec)
-        //fmt.Printf("[%s] [%s] [%s] [%s] [%d] [%d]\n", dnsName, dnsType, dnsTTL, dnsZoneId, dnsCount, dnsValues)
-        dnsName, dnsType, dnsTTL, dnsZoneId, dnsCount, dnsValues := GetDetailsOfDNS(dnsRec)
-        // DnsDetails := GetDetailsOfDNS(dnsRec)
-        // dnsName, dnsType, dnsTTL, dnsZoneId, dnsCount, dnsValues := DnsDetails
-
+        dnsName, dnsType, dnsTTL, dnsZoneId, accAlias, dnsCount, dnsValues := GetDetailsOfDNS(dnsRec)
         // DEBUG    
-        //fmt.Printf("SECND[%s] [%s] [%s] [%s] [%d] [%d]\n", dnsName, dnsType, dnsTTL, dnsZoneId, dnsCount, dnsValues)
+        //fmt.Printf("FIRST:[%s] \n", dnsRec)
+        //fmt.Printf("SECND[%s] [%s] [%s] [%s] [%d] [%d]\n", dnsName, dnsType, dnsTTL, dnsZoneId, accAlias, dnsCount, dnsValues)
 
         dnsName = strings.Replace(dnsName, `\052`, "*", -1)  // Convert literal escaped asterisks
         dnsName = strings.Replace(dnsName, `\100`, "@", -1)  //   and at-sign
@@ -80,17 +76,17 @@ func ListDNS(filter string, option string) {
         Values = strings.TrimSpace(Values)
         if filter == "" || strContains(dnsName, filter) || strContains(Values, filter) ||
                            strContains(dnsType, filter) || strContains(dnsTTL, filter) ||
-                           strContains(dnsZoneId, filter) {
+                           strContains(accAlias, filter) || strContains(dnsZoneId, filter) {
             // Notice we never actually display d.ZoneID but we do filter by it
             if option == "-dv" {
                 // Display all records
-                fmt.Printf("%-64s  %-8s  %6s  %-2d  %s\n", dnsName, dnsType, dnsTTL, dnsCount, Values)
+                fmt.Printf("%-64s  %-8s  %6s  %-18s  %-2d  %s\n", dnsName, dnsType, dnsTTL, accAlias, dnsCount, Values)
             } else {
                 // Display only list CNAME, ALIAS, and A records
                 if strings.EqualFold(dnsType, "cname") ||
                    strings.EqualFold(dnsType, "alias") ||
                    strings.EqualFold(dnsType, "a") { 
-                    fmt.Printf("%-64s  %-8s  %6s  %-2d  %s\n", dnsName, dnsType, dnsTTL, dnsCount, Values)
+                    fmt.Printf("%-64s  %-8s  %6s  %-18s  %-2d  %s\n", dnsName, dnsType, dnsTTL, accAlias, dnsCount, Values)
                 }
             }                
         }
@@ -124,9 +120,15 @@ func GetDNSList() (list []ResourceRecordSetType, err error) {
 
 
 // Return important attributes of given object
-func GetDetailsOfDNS(dnsRec ResourceRecordSetType) (dnsName, dnsType, dnsTTL, dnsZoneId string,
-                                                    dnsCount int, dnsValues []string) {
-    dnsName, dnsType, dnsTTL, dnsZoneId, dnsCount, dnsValues = "-", "-", "-", "-", 1, nil
+func GetDetailsOfDNS(dnsRec ResourceRecordSetType) (dnsName string,
+                                                   dnsType string,
+                                                   dnsTTL string,
+                                                   dnsZoneId string,
+                                                   accAlias string,
+                                                   dnsCount int,
+                                                   dnsValues []string) {
+    dnsName, dnsType, dnsTTL, dnsZoneId = "-", "-", "-", "-"
+    accAlias, dnsCount, dnsValues = "-", 1, nil
 
     dnsName = strings.TrimSuffix(*dnsRec.Name, ".")  // Trim superfluous '.' pre/suffixes in Name
     dnsZoneId = *dnsRec.ZoneId
@@ -154,6 +156,8 @@ func GetDetailsOfDNS(dnsRec ResourceRecordSetType) (dnsName, dnsType, dnsTTL, dn
             dnsValues = append(dnsValues, *dnsRec.ResourceRecords[i].Value)
         }
     }
+
+    if dnsRec.AccountAlias != nil { accAlias = *dnsRec.AccountAlias }
 
     return
 }
