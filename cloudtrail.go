@@ -4,6 +4,7 @@ package main
 import (
     "fmt"
     "time"
+    "strings"
     "github.com/aws/aws-sdk-go/aws"
     "github.com/aws/aws-sdk-go/aws/session"
     "github.com/aws/aws-sdk-go/service/cloudtrail"
@@ -36,23 +37,38 @@ func GetCloudTrailEvents(source string, minutesAgo int) (list []*cloudtrail.Even
         EndTime: aws.Time(time.Now().UTC()),  // AWS API uses UTC
     }
 
-    // Uncomment to help debugging
+    // UNCOMMENT TO HELP DEBUGGING
     //fmt.Printf("Checking CloudTrail for updates in source: %s\n", source)
 
     // Loop requests, in case there are more than maxResults records or AWS is throttling
+    errcount := 0
     for {
         // Get batch of records
 	    resp, err := svc.LookupEvents(params)
         if err != nil {
-            if BeingThrottled(err) {   // Sleep for a moment if AWS is throttling us
+            // Sleep for a moment if AWS is throttling us
+            if BeingThrottled(err) {
                 fmt.Printf("AWS throttling. Sleeping %d seconds...\n", APISecondsDelay)
                 time.Sleep(time.Duration(APISecondsDelay) * time.Second)
+                continue
+            }
+            // Allow for 3 other unknown API call errors before panicking
+            if errcount < 3 {
+                errcount++
                 continue
             }
             panic(err.Error())   // Abort on any other error
         }
 
         for _, event := range resp.Events {  // Add this batch to the list
+            // We don't care about 'List' or 'Describe' event types
+            if strings.Contains(*event.EventName, "List") ||
+               strings.Contains(*event.EventName, "Describe") {
+                continue
+            }
+            // UNCOMMENT TO HELP DEBUGGING
+            // fmt.Println(source, *event.EventName)
+            
             list = append(list, event)
         }
 
