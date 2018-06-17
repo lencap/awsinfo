@@ -6,7 +6,7 @@ The speed in querying these services is achieve by caching the AWS resources inf
 ## Installation
 The prefer installation method is with [Homebrew](https://brew.sh):
   * `brew untap lencap/tools && brew tap lencap/tools` to grab the lastest formula.
-  * `brew install lencap/tools/awsinfo`
+  * `brew install lencap/tools/awsinfo` or `brew upgrade lencap/tools/awsinfo`
 
 Alternatively, you can compile and install manually:  
   * Install GoLang (please find out how that's done somewhere else).
