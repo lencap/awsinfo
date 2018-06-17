@@ -156,13 +156,20 @@ func GetStackListFromAWS() (list []StackType) {
     params := &cloudformation.DescribeStacksInput{}
 
     // Loop requests in case there're more than PageSize records or we're being throttled
+    errcount := 0
     for {
         // Get batch of records
         resp, err := svc.DescribeStacks(params)
         if err != nil {
-            if BeingThrottled(err) {   // Sleep for a moment if AWS is throttling us
+            // Sleep for a moment if AWS is throttling us
+            if BeingThrottled(err) {
                 fmt.Printf("  AWS throttling. Sleeping %d seconds...\n", APISecondsDelay)
                 time.Sleep(time.Duration(APISecondsDelay) * time.Second)
+                continue
+            }
+            // Allow for 3 other unknown API call errors before panicking
+            if errcount < 3 {
+                errcount++
                 continue
             }
             panic(err.Error())   // Abort on any other error
