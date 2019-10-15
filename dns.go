@@ -140,9 +140,14 @@ func GetDetailsOfDNS(dnsRec ResourceRecordSetType) (dnsName string,
     }
 
     if dnsType == "CNAME" {
-        // A CNAME type only has 1 value, index 0
-        dnsValues = append(dnsValues, *dnsRec.ResourceRecords[0].Value)
-        dnsValues[0] = strings.TrimSuffix(dnsValues[0], ".")  // Trim superfluous pre/suffixes in CNAME
+        if dnsRec.AliasTarget != nil {
+            dnsValues = append(dnsValues, *dnsRec.AliasTarget.DNSName)
+            dnsValues[0] = NormalDNSName(dnsValues[0])
+         } else {
+            // A CNAME type only has 1 value, index 0
+            dnsValues = append(dnsValues, *dnsRec.ResourceRecords[0].Value)
+            dnsValues[0] = strings.TrimSuffix(dnsValues[0], ".")  // Trim superfluous pre/suffixes in CNAME
+         }
     } else if dnsType == "A" && dnsRec.ResourceRecords == nil {
         // An A type with no ResourceRecords is actually that special AWS ALIAS type, which also only has
         // one value, index 0. Note: ALIAS is not an offical DNS type, but we're calling it so for simplicity
