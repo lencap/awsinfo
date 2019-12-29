@@ -3,6 +3,7 @@
 
 default:
 	GOOS=darwin GOARCH=amd64 go build -ldflags "-s -w" -o build/macos/awsinfo
+
 all:
 	rm -rf build
 	mkdir -p build/{macos,centos,windows}
@@ -12,8 +13,8 @@ all:
 	GOOS=linux GOARCH=amd64 go build -ldflags "-s -w" -o build/centos/awsinfo
 	GOOS=windows GOARCH=amd64 go build -ldflags "-s -w" -o build/windows/awsinfo.exe
 
-# Modify below target to where you keep your binaries
 install:
-	cp build/macos/awsinfo $(HOME)/data/bin
+	./install.sh build/macos/awsinfo
+
 clean:
 	rm -rf build
