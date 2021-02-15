@@ -1,8 +1,6 @@
 # AWS CLI Information Utility
 A sysadmin command-line utility that allows quick and dirty querying of the following AWS resources: EC2 instances, ELBs, R53 DNS zones and records, and CloudFormation stacks. It also allows the breakdown of a DNS/ELB endpoint into its instances backends. See below for more info.
 
-asdf
-
 The speed in querying these services is achieve by caching the AWS resources info in JSON files stored in the `$HOME/.awsinfo/` directory. The files are called `inst.json`, `elb.json`, `zone.json`, `dns.json`, and `stack.json`.
 
 ## Installation
